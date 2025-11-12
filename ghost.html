@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ghost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #121212;
+      --text: #ffffff;
+      --muted: #9aa0a6;
+      --accent: #7b61ff;
+      --border: #1f1f1f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+    /* Top bar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .btn {
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 120ms ease;
+      font-weight: 600;
+    }
+    .btn.icon { width: 36px; padding: 8px; text-align: center; }
+    .btn:hover { border-color: #2a2a2a; transform: translateY(-1px); }
+    .address {
+      flex: 1;
+      background: #0f0f0f;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      outline: none;
+      font-size: 14px;
+    }
+    .address::placeholder { color: var(--muted); }
+
+    /* Bookmarks */
+    .bookmarks {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #0e0e0e;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .bookmark {
+      background: #151515;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    .bookmark:hover { border-color: #2a2a2a; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #0e0e0e;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+    .tab {
+      background: #121212;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 999px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+    }
+    .tab.active { border-color: var(--accent); box-shadow: 0 0 0 2px #2b235f inset; }
+    .tab .title { font-size: 13px; color: var(--text); }
+    .tab .close { color: var(--muted); cursor: pointer; }
+    .tab .close:hover { color: #ff6b6b; }
+
+    /* Content area */
+    .content {
+      height: 100%;
+      position: relative;
+      background: #0b0b0b;
+    }
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000;
+    }
+
+    /* Splash */
+    .splash {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: #000;
+      opacity: 0;
+      animation: fadeIn 1.6s ease forwards;
+      z-index: 2;
+    }
+    .splash-inner {
+      text-align: center;
+      animation: float 3.2s ease-in-out infinite;
+    }
+    .ghost-logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 24px;
+      background: radial-gradient(circle at 50% 35%, #fff, #dfe2ff 40%, #7b61ff 120%);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 30px rgba(123,97,255,0.25);
+    }
+    .ghost-logo::before, .ghost-logo::after {
+      content: "";
+      width: 18px; height: 18px;
+      background: #000;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 6px;
+    }
+    .brand { margin-top: 14px; font-weight: 800; letter-spacing: 0.12em; font-size: 22px; }
+    .status { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button class="btn icon" id="back">←</button>
+    <button class="btn icon" id="forward">→</button>
+    <button class="btn icon" id="reload">⟳</button>
+    <input class="address" id="address" placeholder="Type a URL and press Enter (e.g., https://example.com)" />
+    <button class="btn" id="newtab">New Tab</button>
+  </div>
+
+  <!-- Bookmarks -->
+  <div class="bookmarks" id="bookmarks"></div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs"></div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="splash" id="splash">
+      <div class="splash-inner">
+        <div class="ghost-logo"></div>
+        <div class="brand">GHOST</div>
+        <div class="status" id="status">Launching...</div>
+      </div>
+    </div>
+    <iframe id="view" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+  </div>
+
+  <script>
+    // Basic state
+    const tabs = [];
+    let activeIndex = -1;
+    const home = "about:blank"; // Can set a custom local page
+
+    const bookmarksData = [
+      { name: "Google", url: "https://www.google.com" },
+      { name: "YouTube", url: "https://www.youtube.com" },
+      { name: "OpenAI", url: "https://www.openai.com" }
+    ];
+
+    // Elements
+    const address = document.getElementById("address");
+    const backBtn = document.getElementById("back");
+    const forwardBtn = document.getElementById("forward");
+    const reloadBtn = document.getElementById("reload");
+    const newtabBtn = document.getElementById("newtab");
+    const tabsEl = document.getElementById("tabs");
+    const bookmarksEl = document.getElementById("bookmarks");
+    const view = document.getElementById("view");
+    const splash = document.getElementById("splash");
+    const status = document.getElementById("status");
+
+    // Splash lifecycle
+    setTimeout(() => status.textContent = "Ready!", 1800);
+    setTimeout(() => splash.style.display = "none", 2400);
+
+    // Bookmarks
+    function renderBookmarks() {
+      bookmarksEl.innerHTML = "";
+      bookmarksData.forEach(b => {
+        const btn = document.createElement("button");
+        btn.className = "bookmark";
+        btn.textContent = b.name;
+        btn.addEventListener("click", () => navigateTo(b.url));
+        bookmarksEl.appendChild(btn);
+      });
+    }
+
+    // Tabs
+    function addTab(url = home, title = "New Tab") {
+      const tab = { url, title, history: [url], pointer: 0 };
+      tabs.push(tab);
+      setActiveTab(tabs.length - 1);
+      renderTabs();
+      navigateTo(url);
+    }
+
+    function closeTab(index) {
+      tabs.splice(index, 1);
+      if (tabs.length === 0) {
+        activeIndex = -1;
+        view.src = "about:blank";
+        renderTabs();
+        return;
+      }
+      if (index <= activeIndex) activeIndex = Math.max(0, activeIndex - 1);
+      renderTabs();
+      setActiveTab(activeIndex);
+      navigateTo(tabs[activeIndex].url);
+    }
+
+    function setActiveTab(index) {
+      activeIndex = index;
+      renderTabs();
+      address.value = tabs[index]?.url || "";
+    }
+
+    function renderTabs() {
+      tabsEl.innerHTML = "";
+      tabs.forEach((t, i) => {
+        const el = document.createElement("div");
+        el.className = "tab" + (i === activeIndex ? " active" : "");
+        const title = document.createElement("span");
+        title.className = "title";
+        title.textContent = t.title || t.url || "New Tab";
+        const close = document.createElement("span");
+        close.className = "close";
+        close.textContent = "✕";
+        close.title = "Close tab";
+        close.addEventListener("click", (e) => { e.stopPropagation(); closeTab(i); });
+        el.appendChild(title);
+        el.appendChild(close);
+        el.addEventListener("click", () => { setActiveTab(i); navigateTo(t.url); });
+        tabsEl.appendChild(el);
+      });
+    }
+
+    // Navigation
+    function normalizeUrl(u) {
+      if (!u) return "about:blank";
+      const hasProtocol = /^(https?:)\/\//i.test(u) || /^about:blank$/.test(u);
+      return hasProtocol ? u : `https://${u}`;
+    }
+
+    function navigateTo(url) {
+      if (activeIndex === -1) addTab();
+      const tab = tabs[activeIndex];
+      const finalUrl = normalizeUrl(url);
+      view.src = finalUrl;
+      tab.url = finalUrl;
+      // History
+      tab.history = tab.history.slice(0, tab.pointer + 1);
+      tab.history.push(finalUrl);
+      tab.pointer = tab.history.length - 1;
+      address.value = finalUrl;
+      // Title (best effort, updated on load)
+      try {
+        view.onload = () => {
+          const t = view.contentDocument?.title;
+          tab.title = t || finalUrl.replace(/^https?:\/\/(www\.)?/, "");
+          renderTabs();
+        };
+      } catch (e) {
+        tab.title = finalUrl.replace(/^https?:\/\/(www\.)?/, "");
+        renderTabs();
+      }
+    }
+
+    function goBack() {
+      const tab = tabs[activeIndex];
+      if (!tab || tab.pointer <= 0) return;
+      tab.pointer--;
+      const url = tab.history[tab.pointer];
+      view.src = url;
+      tab.url = url;
+      address.value = url;
+      renderTabs();
+    }
+
+    function goForward() {
+      const tab = tabs[activeIndex];
+      if (!tab || tab.pointer >= tab.history.length - 1) return;
+      tab.pointer++;
+      const url = tab.history[tab.pointer];
+      view.src = url;
+      tab.url = url;
+      address.value = url;
+      renderTabs();
+    }
+
+    function reload() {
+      const tab = tabs[activeIndex];
+      if (!tab) return;
+      view.src = tab.url;
+    }
+
+    // Events
+    address.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") navigateTo(address.value.trim());
+    });
+    backBtn.addEventListener("click", goBack);
+    forwardBtn.addEventListener("click", goForward);
+    reloadBtn.addEventListener("click", reload);
+    newtabBtn.addEventListener("click", () => addTab());
+
+    // Init
+    renderBookmarks();
+    addTab("about:blank", "New Tab");
+  </script>
+</body>
+</html>
