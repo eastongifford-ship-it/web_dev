@@ -4,11 +4,12 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    background-color: rgb(255, 230, 0);
 }
 
 header, footer {
-    background-color: #333;
-    color: rgb(255, 255, 255);
+    background-color: #dbc0c0;
+    color: rgb(143, 28, 28);
     text-align: center;
     padding: 1rem;
 }
@@ -25,7 +26,7 @@ aside {
 }
 
 section {
-    background-color: #ceb4b4;
+    background-color: #552020;
     flex: 1;
     padding: 1rem;
 }
