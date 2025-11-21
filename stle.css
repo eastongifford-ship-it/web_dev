@@ -1,32 +1,46 @@
+
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Times New Roman', Times, serif, sans-serif;
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: rgb(255, 230, 0);
+    background: #ffe600;
 }
 
 header, footer {
-    background-color: #dbc0c0;
-    color: rgb(143, 28, 28);
+    background: #dbc0c0;
+    color: #8f1c1c;
     text-align: center;
     padding: 1rem;
 }
 
 main {
     display: flex;
-    flex: 1;
+    flex: 0;
+}
+
+aside, section {
+    padding: 1rem;
 }
 
 aside {
-    background-color: #752c2c;
+    background: #752c2c;
     width: 200px;
-    padding: 1rem;
 }
 
 section {
-    background-color: #552020;
+    background: #9e2121;
     flex: 1;
-    padding: 1rem;
+}
+h1 {
+    font-family: 'Georgia', serif;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    
+}
+p{
+    display: flex;
+    flex-direction: column;
 }
