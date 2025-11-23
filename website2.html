@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Retro Bowl College Clone</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: monospace;
+      text-align: center;
+    }
+    canvas {
+      background: #0a3;
+      display: block;
+      margin: 20px auto;
+      border: 4px solid #fff;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #menu { margin: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Retro Bowl College (Moving Pixel Demo)</h1>
+  <canvas id="field" width="600" height="400"></canvas>
+  
+  <div id="menu">
+    <h2>Play Calling</h2>
+    <button onclick="play('run')">Run</button>
+    <button onclick="play('pass')">Pass</button>
+    <button onclick="play('fieldgoal')">Field Goal</button>
+    
+    <h2>Recruitment</h2>
+    <button onclick="recruitPlayer()">Recruit Player</button>
+    
+    <h2>Training</h2>
+    <button onclick="trainPlayer()">Train Player</button>
+    
+    <h2>Academics</h2>
+    <button onclick="study()">Study Session</button>
+    
+    <h2>Season Mode</h2>
+    <button onclick="nextGame()">Play Next Game</button>
+    <button onclick="resetSeason()">Reset Season</button>
+  </div>
+  
+  <p id="score">Score: Home 0 - Away 0</p>
+  <p id="roster">Roster: (empty)</p>
+  <p id="gpa">Team GPA: 4.0</p>
+  <p id="budget">Scholarship Budget: 100</p>
+  <p id="season">Season Record: 0-0 | Rank: #1</p>
+  
+  <script>
+    const canvas = document.getElementById('field');
+    const ctx = canvas.getContext('2d');
+
+    let homeScore = 0, awayScore = 0;
+    let roster = [];
+    let opponents = [];
+    let teamGPA = 4.0;
+    let budget = 100;
+    let wins = 0, losses = 0, rank = 1;
+    let gameNumber = 1;
+
+    class Player {
+      constructor(name, color="yellow") {
+        this.name = name;
+        this.speed = Math.floor(Math.random() * 10) + 1;
+        this.strength = Math.floor(Math.random() * 10) + 1;
+        this.gpaImpact = (Math.random() * 0.5) - 0.25;
+        this.x = Math.random()*500+50;
+        this.y = Math.random()*200+150;
+        this.dx = (Math.random()>0.5?1:-1) * (this.speed/2);
+        this.dy = (Math.random()>0.5?1:-1) * (this.speed/2);
+        this.color = color;
+      }
+    }
+
+    function drawPixelPlayer(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 6, 6);   // head
+      ctx.fillRect(x, y+6, 6, 10); // body
+      ctx.fillRect(x-4, y+6, 4, 10); // left arm
+      ctx.fillRect(x+6, y+6, 4, 10); // right arm
+      ctx.fillRect(x, y+16, 3, 8); // left leg
+      ctx.fillRect(x+3, y+16, 3, 8); // right leg
+    }
+
+    function animatePlayers() {
+      roster.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width-10) p.dx *= -1;
+        if (p.y < 50 || p.y > canvas.height-30) p.dy *= -1;
+        drawPixelPlayer(p.x, p.y, p.color);
+      });
+      opponents.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width-10) p.dx *= -1;
+        if (p.y < 50 || p.y > canvas.height-30) p.dy *= -1;
+        drawPixelPlayer(p.x, p.y, p.color);
+      });
+    }
+
+    function drawField() {
+      ctx.fillStyle = '#0a3';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 200, canvas.width, 5);
+      ctx.fillText("Game " + gameNumber, 280, 20);
+      animatePlayers();
+      requestAnimationFrame(drawField);
+    }
+
+    function play(type) {
+      let result = Math.random();
+      let teamStrength = roster.reduce((sum,p)=>sum+p.strength,0)/10;
+      let teamSpeed = roster.reduce((sum,p)=>sum+p.speed,0)/10;
+      let odds = result + (teamStrength+teamSpeed)/50;
+
+      if (type === 'run' && odds > 0.5) homeScore += 7;
+      else if (type === 'pass' && odds > 0.4) homeScore += 7;
+      else if (type === 'fieldgoal' && odds > 0.3) homeScore += 3;
+
+      aiScore();
+      updateUI();
+    }
+
+    function aiScore() {
+      let difficulty = gameNumber * 0.05;
+      if (Math.random() + difficulty > 0.7) awayScore += 7;
+    }
+
+    function recruitPlayer() {
+      if (budget < 20) { alert("Not enough scholarship funds!"); return; }
+      const names = ["QB Johnson","RB Smith","WR Davis","LB Brown","CB Wilson"];
+      let newPlayer = new Player(names[Math.floor(Math.random()*names.length)], "yellow");
+      roster.push(newPlayer);
+      // Add matching opponent
+      let opp = new Player("Opponent", "red");
+      opponents.push(opp);
+      budget -= 20;
+      teamGPA += newPlayer.gpaImpact;
+      updateUI();
+      saveGame();
+    }
+
+    function trainPlayer() {
+      if (roster.length === 0) return;
+      let p = roster[Math.floor(Math.random()*roster.length)];
+      p.speed += 1; p.strength += 1;
+      updateUI();
+      saveGame();
+    }
+
+    function study() {
+      teamGPA = Math.min(4.0, teamGPA + 0.1);
+      updateUI();
+      checkSuspensions();
+      saveGame();
+    }
+
+    function checkSuspensions() {
+      if (teamGPA < 2.0 && roster.length > 0) {
+        let suspended = roster.splice(Math.floor(Math.random()*roster.length),1);
+        opponents.splice(0,1); // remove matching opponent
+        alert(`${suspended[0].name} suspended due to low GPA!`);
+      }
+    }
+
+    function nextGame() {
+      if (homeScore > awayScore) wins++;
+      else losses++;
+      rank = Math.max(1, 10 - wins + losses);
+      gameNumber++;
+      homeScore = 0; awayScore = 0;
+
+      checkSuspensions();
+
+      if (gameNumber > 10) {
+        championship();
+      } else {
+        updateUI();
+      }
+    }
+
+    function championship() {
+      if (wins > losses) {
+        alert("🏆 Congratulations! You won the College Championship!");
+      } else {
+        alert("Season over. Better luck next year!");
+      }
+      resetSeason();
+    }
+
+    function resetSeason() {
+      wins = 0; losses = 0; rank = 1; gameNumber = 1;
+      roster = []; opponents = []; teamGPA = 4.0; budget = 100;
+      homeScore = 0; awayScore = 0;
+      updateUI();
+      saveGame();
+    }
+
+    function updateUI() {
+      document.getElementById('score').textContent =
+        `Score: Home ${homeScore} - Away ${awayScore}`;
+      document.getElementById('roster').textContent =
+        `Roster: ${roster.map(p=>p.name+"(S:"+p.speed+" Str:"+p.strength+")").join(", ") || "(empty)"}`;
+      document.getElementById('gpa').textContent = `Team GPA: ${teamGPA.toFixed(2)}`;
+      document.getElementById('budget').textContent = `Scholarship Budget: ${budget}`;
+      document.getElementById('season').textContent =
+        `Season Record: ${wins}-${losses} | Rank: #${rank}`;
+    }
+
+    function saveGame() {
+      localStorage.setItem('retroBowlCollege', JSON.stringify({
+        homeScore, awayScore, roster, opponents,
+        teamGPA, budget, wins, losses, rank, gameNumber
+      }));}
