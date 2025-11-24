@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Bird</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0e1a26;
+      --fg: #e2f1ff;
+      --accent: #5ee2ff;
+      --pipe: #6bd66b;
+      --pipe-dark: #4fb24f;
+      --ground: #1a2b3a;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: linear-gradient(180deg, var(--bg), #142536 70%, var(--ground));
+      color: var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+    #wrap {
+      display: grid;
+      place-items: center;
+      height: 100%;
+    }
+    canvas {
+      border-radius: 12px;
+      background: transparent;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .hud {
+      position: fixed;
+      top: 16px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      user-select: none;
+    }
+    .score {
+      backdrop-filter: blur(8px);
+      background: rgba(10,20,30,0.4);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--fg);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.65) 100%);
+      color: var(--fg);
+    }
+    .card {
+      background: rgba(12,22,32,0.8);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 22px 24px;
+      max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 10px;
+    }
+    .subtitle {
+      margin: 0 0 14px;
+      color: #bcd5e6;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--accent), #8df6ff);
+      color: #0b1c2a;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      border: none;
+    }
+    .tips {
+      font-size: 13px;
+      color: #a7c4d8;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud"><div class="score" id="score">Score: 0</div></div>
+
+  <div id="wrap">
+    <canvas id="game" width="420" height="600" aria-label="Flappy Birf"></canvas>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h1 class="title">Flappy Birf</h1>
+      <p class="subtitle">Click or press Space to flap. Don’t bonk the pipes.</p>
+      <button class="btn" id="startBtn">Start</button>
+      <div class="tips">Pro tip: rhythm > panic.</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const scoreEl = document.getElementById('score');
+      const overlay = document.getElementById('overlay');
+      const startBtn = document.getElementById('startBtn');
+
+      // Game constants
+      const W = canvas.width;
+      const H = canvas.height;
+      const GRAVITY = .2;
+      const FLAP = -4;
+      const PIPE_GAP = 160;
+      const PIPE_WIDTH = 60;
+      const PIPE_INTERVAL = 1200; // ms
+      const PIPE_SPEED = 2.6;
+      const BIRF_RADIUS = 1;
+      const GROUND_Y = H - 30;
+
+      // State
+      let birf, pipes, lastPipeTime, score, best = 0, running = false, rafId = null;
+
+      // Particles for flair
+      const particles = [];
+
+      function reset() {
+        birf = {
+          x: W * 0.28,
+          y: H * 0.42,
+          vy: 0,
+          rot: 0,
+        };
+        pipes = [];
+        lastPipeTime = 0;
+        score = 0;
+        updateScore();
+        particles.length = 0;
+      }
+
+      function updateScore() {
+        scoreEl.textContent = `Score: ${score} ${best ? '(Best: ' + best + ')' : ''}`;
+      }
+
+      function spawnPipe() {
+        const margin = 60;
+        const holeCenter = margin + Math.random() * (H - 2*margin - PIPE_GAP - 60);
+        pipes.push({
+          x: W + PIPE_WIDTH,
+          holeY: holeCenter,
+          passed: false,
+        });
+      }
+
+      function flap() {
+        if (!running) return;
+        birf.vy = FLAP;
+        // spawn a small burst
+        for (let i = 0; i < 8; i++) {
+          particles.push({
+            x: birf.x - 6 + Math.random()*12,
+            y: birf.y + BIRF_RADIUS - 2,
+            vx: -1 - Math.random()*1.0,
+            vy: -0.5 + Math.random()*1.0,
+            life: 20 + Math.random()*18,
+            color: `rgba(94,226,255,${0.7 + Math.random()*0.3})`,
+          });
+        }
+      }
+
+      function drawBackground(t) {
+        // Sky stars
+        ctx.fillStyle = 'transparent';
+        ctx.clearRect(0,0,W,H);
+
+        // ground strip
+        ctx.fillStyle = '#0c1722';
+        ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+        // soft horizon glow
+        const grad = ctx.createLinearGradient(0, GROUND_Y-80, 0, GROUND_Y);
+        grad.addColorStop(0, 'rgba(94,226,255,0.08)');
+        grad.addColorStop(1, 'rgba(94,226,255,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, GROUND_Y-80, W, 80);
+
+        // twinkle
+        for (let i = 0; i < 40; i++) {
+          const x = (i * 97) % W;
+          const y = 30 + (i * 53) % (GROUND_Y - 60);
+          const s = 0.6 + ((t/1000 + i) % 1) * 0.6;
+          ctx.fillStyle = 'rgba(226,241,255,0.35)';
+          ctx.beginPath();
+          ctx.arc(x, y, s, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      function drawBirf() {
+        ctx.save();
+        ctx.translate(birf.x, birf.y);
+        // rotation based on velocity
+        birf.rot = Math.max(-0.6, Math.min(0.8, birf.vy / 10));
+        ctx.rotate(birf.rot);
+
+        // body
+        ctx.fillStyle = '#ffd66b';
+        ctx.beginPath();
+        ctx.arc(0, 0, BIRF_RADIUS, 0, Math.PI*2);
+        ctx.fill();
+
+        // belly
+        ctx.fillStyle = '#ffe69c';
+        ctx.beginPath();
+        ctx.arc(2, 3, BIRF_RADIUS*0.75, 0, Math.PI*2);
+        ctx.fill();
+
+        // eye
+        ctx.fillStyle = '#0b1c2a';
+        ctx.beginPath();
+        ctx.arc(5, -4, 3, 0, Math.PI*2);
+        ctx.fill();
+
+        // beak
+        ctx.fillStyle = '#ff9f45';
+        ctx.beginPath();
+        ctx.moveTo(BIRF_RADIUS, 0);
+        ctx.lineTo(BIRF_RADIUS + 8, -2);
+        ctx.lineTo(BIRF_RADIUS, -4);
+        ctx.closePath();
+        ctx.fill();
+
+        // wing
+        ctx.fillStyle = '#ffc85a';
+        ctx.beginPath();
+        const flapPhase = Math.sin(Date.now()/80);
+        ctx.arc(-4, 2 + flapPhase*2, 6, Math.PI*0.2, Math.PI*1.3);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawPipes() {
+        pipes.forEach(p => {
+          const topH = p.holeY - PIPE_GAP/2;
+          const botY = p.holeY + PIPE_GAP/2;
+          const botH = GROUND_Y - botY;
+
+          // pipe body
+          ctx.fillStyle = '#6bd66b';
+          ctx.fillRect(p.x, 0, PIPE_WIDTH, topH);
+          ctx.fillRect(p.x, botY, PIPE_WIDTH, botH);
+
+          // caps
+          ctx.fillStyle = '#4fb24f';
+          ctx.fillRect(p.x - 4, topH - 12, PIPE_WIDTH + 8, 12);
+          ctx.fillRect(p.x - 4, botY, PIPE_WIDTH + 8, 12);
+
+          // subtle shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.12)';
+          ctx.fillRect(p.x + PIPE_WIDTH - 6, 0, 6, topH);
+          ctx.fillRect(p.x + PIPE_WIDTH - 6, botY, 6, botH);
+        });
+      }
+
+      function drawParticles() {
+        particles.forEach(pt => {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 2, 0, Math.PI*2);
+          ctx.fill();
+        });
+      }
+
+      function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.02;
+          p.life -= 1;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+      }
+
+      function rectCircleCollide(rx, ry, rw, rh, cx, cy, cr) {
+        const nearestX = Math.max(rx, Math.min(cx, rx + rw));
+        const nearestY = Math.max(ry, Math.min(cy, ry + rh));
+        const dx = cx - nearestX;
+        const dy = cy - nearestY;
+        return (dx*dx + dy*dy) < (cr*cr);
+      }
+
+      function checkCollisions() {
+        // ground/sky
+        if (birf.y + BIRF_RADIUS >= GROUND_Y || birf.y - BIRF_RADIUS <= 0) return true;
+
+        // pipes
+        for (const p of pipes) {
+          const topH = p.holeY - PIPE_GAP/2;
+          const botY = p.holeY + PIPE_GAP/2;
+          if (rectCircleCollide(p.x, 0, PIPE_WIDTH, topH, birf.x, birf.y, BIRF_RADIUS)) return true;
+          if (rectCircleCollide(p.x, botY, PIPE_WIDTH, GROUND_Y - botY, birf.x, birf.y, BIRF_RADIUS)) return true;
+
+          // scoring when passed pipe center
+          if (!p.passed && birf.x > p.x + PIPE_WIDTH) {
+            p.passed = true;
+            score += 1;
+            updateScore();
+          }
+        }
+        return false;
+      }
+
+      function stop() {
+        running = false;
+        cancelAnimationFrame(rafId);
+        best = Math.max(best, score);
+        overlay.querySelector('.title').textContent = 'Game Over';
+        overlay.querySelector('.subtitle').textContent = `Score: ${score}  •  Best: ${best}`;
+        overlay.style.display = 'grid';
+      }
+
+      function loop(t) {
+        rafId = requestAnimationFrame(loop);
+        drawBackground(t);
+
+        // spawn pipes
+        if (!lastPipeTime) lastPipeTime = t;
+        if (t - lastPipeTime > PIPE_INTERVAL) {
+          spawnPipe();
+          lastPipeTime = t;
+        }
+
+        // move pipes
+        pipes.forEach(p => p.x -= PIPE_SPEED);
+        // remove off-screen
+        while (pipes.length && pipes[0].x + PIPE_WIDTH < -20) pipes.shift();
+
+        // birf physics
+        birf.vy += GRAVITY;
+        birf.y += birf.vy;
+
+        // draw
+        drawPipes();
+        drawBirf();
+        drawParticles();
+        updateParticles();
+
+        // collisions
+        if (checkCollisions()) {
+          stop();
+        }
+      }
+
+      function start() {
+        reset();
+        running = true;
+        overlay.style.display = 'none';
+        lastPipeTime = 0;
+        // prime first pipes
+        spawnPipe();
+        spawnPipe();
+        pipes[0].x = W + 40;
+        pipes[1].x = W + 40 + 220;
+        requestAnimationFrame(loop);
+      }
+
+      // Controls
+      function onInput(e) {
+        e.preventDefault();
+        if (!running) return;
+        flap();
+      }
+      canvas.addEventListener('pointerdown', onInput);
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (!running) return;
+          flap();
+        } else if (e.code === 'Enter' && !running) {
+          start();
+        }
+      });
+      startBtn.addEventListener('click', start);
+
+      // Resize handling for crisp canvas
+      function scaleCanvas() {
+        const maxW = Math.min(window.innerWidth - 24, 480);
+        const scale = maxW / W;
+        canvas.style.width = `${W * scale}px`;
+        canvas.style.height = `${H * scale}px`;
+      }
+      window.addEventListener('resize', scaleCanvas);
+      scaleCanvas();
+
+      // Show start screen initially
+      reset();
+      overlay.style.display = 'grid';
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Clicker Ultra</title>
+  <style>
+    body { margin:0; font-family:sans-serif; background:#222; color:#eee; }
+    .wrap { display:flex; gap:20px; padding:20px; }
+    .cookie { width:200px; height:200px; border-radius:50%; background:#c78a53; box-shadow:inset 0 10px 30px #000; cursor:pointer; }
+    .stats { margin-top:10px; }
+    .shop { flex:1; }
+    .item { display:flex; justify-content:space-between; background:#333; padding:10px; margin:5px 0; border-radius:8px; }
+    .item button { background:#ffd27a; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; }
+    .hud { margin-bottom:10px; }
+    .btn { margin:5px; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; }
+    .green { background:#75d87a; }
+    .red { background:#ff7b7b; }
+    .blue { background:#9fe0ff; }
+    .achievement { position:fixed; top:20px; right:20px; background:#444; padding:10px; border-radius:8px; display:none; }
+    .golden { position:absolute; width:60px; height:60px; border-radius:50%; background:gold; box-shadow:0 0 20px gold; cursor:pointer; display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <div class="cookie" id="cookie"></div>
+      <div class="stats">
+        <div id="count">Cookies: 0</div>
+        <div id="rate">0 per click • 0/s</div>
+        <div id="prestige">Prestige: 0</div>
+      </div>
+      <div class="hud">
+        <button class="btn green" id="saveBtn">Save</button>
+        <button class="btn blue" id="exportBtn">Export</button>
+        <button class="btn red" id="resetBtn">Reset</button>
+        <button class="btn" id="ascendBtn">Ascend</button>
+      </div>
+    </div>
+    <div class="shop" id="shop"></div>
+  </div>
+  <div class="achievement" id="achievement"></div>
+  <div class="golden" id="golden"></div>
+
+<script>
+(() => {
+  let cookies=0,total=0,perClick=1,prestige=0,mult=1;
+  const items=[
+    {id:'cursor',name:'Cursor',base:15,cps:0.1,amt:0},
+    {id:'grandma',name:'Grandma',base:100,cps:1,amt:0},
+    {id:'farm',name:'Farm',base:1100,cps:8,amt:0},
+    {id:'factory',name:'Factory',base:12000,cps:45,amt:0},
+    {id:'click1',name:'Sturdier Mouse',base:50,bonus:1,amt:0,type:'click'},
+    {id:'click2',name:'Double Tap',base:500,bonus:5,amt:0,type:'click'}
+  ];
+  const elC=document.getElementById('cookie'),elCount=document.getElementById('count'),
+        elRate=document.getElementById('rate'),elShop=document.getElementById('shop'),
+        elAch=document.getElementById('achievement'),elGold=document.getElementById('golden'),
+        elPrest=document.getElementById('prestige');
+  function cost(i){return Math.floor(i.base*Math.pow(1.15,i.amt));}
+  function update(){
+    const cps=items.filter(i=>!i.type).reduce((s,i)=>s+i.amt*i.cps,0)*mult;
+    elCount.textContent=`Cookies: ${Math.floor(cookies)}`;
+    elRate.textContent=`${perClick} per click • ${cps.toFixed(1)}/s`;
+    elPrest.textContent=`Prestige: ${prestige}`;
+    elShop.innerHTML='';
+    items.forEach(i=>{
+      const c=cost(i);
+      const row=document.createElement('div');row.className='item';
+      row.innerHTML=`<div>${i.name} x${i.amt} • ${i.type?'+'+i.bonus+'/click':i.cps+'/s each'} • Cost: ${c}</div>`;
+      const b=document.createElement('button');b.textContent='Buy';
+      b.disabled=cookies<c;
+      b.onclick=()=>buy(i);
+      row.appendChild(b);elShop.appendChild(row);
+    });
+  }
+  function click(){cookies+=perClick*mult;total+=perClick*mult;checkAch();update();}
+  function buy(i){const c=cost(i);if(cookies<c)return;cookies-=c;i.amt++;
+    if(i.type)perClick+=i.bonus;update();}
+  function tick(){const cps=items.filter(i=>!i.type).reduce((s,i)=>s+i.amt*i.cps,0)*mult;
+    cookies+=cps/10;total+=cps/10;checkAch();update();setTimeout(tick,100);}
+  function save(){localStorage.setItem('cookieSave',JSON.stringify({cookies,total,perClick,items,prestige,mult}));}
+  function load(){const d=localStorage.getItem('cookieSave');if(!d)return;
+    const s=JSON.parse(d);cookies=s.cookies;total=s.total;perClick=s.perClick;prestige=s.prestige;mult=s.mult;
+    s.items.forEach((si,j)=>items[j].amt=si.amt);}
+  function reset(){cookies=0;total=0;perClick=1;items.forEach(i=>i.amt=0);update();}
+  function ascend(){prestige+=Math.floor(Math.sqrt(total/1000));mult=1+prestige*0.1;reset();}
+  function checkAch(){if(total>=100&&total<200)showAch('100 cookies!');if(total>=1000&&total<2000)showAch('1k cookies!');}
+  function showAch(t){elAch.textContent=t;elAch.style.display='block';setTimeout(()=>elAch.style.display='none',2000);}
+  function spawnGold(){elGold.style.left=Math.random()*window.innerWidth+'px';
+    elGold.style.top=Math.random()*window.innerHeight+'px';elGold.style.display='block';
+    setTimeout(()=>elGold.style.display='none',5000);}
+  elGold.onclick=()=>{cookies+=100*mult;elGold.style.display='none';};
+  setInterval(spawnGold,30000);
+  document.getElementById('saveBtn').onclick=save;
+  document.getElementById('exportBtn').onclick=()=>{save();navigator.clipboard.writeText(localStorage.getItem('cookieSave'));};
+  document.getElementById('resetBtn').onclick=reset;
+  document.getElementById('ascendBtn').onclick=ascend;
+  elC.onclick=click;window.onkeydown=e=>{if(e.code==='Space')click();};
+  load();update();tick();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Better Dino Game</title>
+  <style>
+    body { margin:0; background:#f7f7f7; font-family:sans-serif; }
+    #hud { position:fixed; top:10px; left:50%; transform:translateX(-50%); font-weight:bold; }
+    canvas { display:block; margin:60px auto; background:#fff; border:1px solid #ccc; }
+    #overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+               background:rgba(0,0,0,0.5); color:#fff; }
+    #overlay.hidden { display:none; }
+    button { padding:8px 14px; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div id="hud">Score: <span id="score">0</span> | Best: <span id="best">0</span></div>
+  <canvas id="game" width="800" height="200"></canvas>
+  <div id="overlay">
+    <div>
+      <h1>Better Dino</h1>
+      <p>Press Space/Up to jump, Down to duck.</p>
+      <button id="startBtn">Start</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,GROUND=H-20;
+  let dino={x:50,y:GROUND-60,w:50,h:50,vy:0,duck:false};
+  let obstacles=[],score=0,best=0,running=false,raf=null;
+  const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best');
+  const overlay=document.getElementById('overlay'),startBtn=document.getElementById('startBtn');
+
+  function reset(){dino={x:50,y:GROUND-60,w:50,h:50,vy:0,duck:false};obstacles=[];score=0;}
+  function spawn(){
+    const type=Math.random()<0.7?'cactus':'bird';
+    if(type==='cactus'){
+      const size=Math.random()<0.5?'small':'large';
+      const h=size==='small'?30:50;
+      obstacles.push({x:W,y:GROUND-h,w:20,h,type});
+    }else{
+      const y=[GROUND-40,GROUND-70,GROUND-100][Math.floor(Math.random()*3)];
+      obstacles.push({x:W,y,w:40,h:20,type,flap:0});
+    }
+  }
+
+  // Dino drawing with horizontal mouth
+  function drawDino(t){
+    ctx.save();
+    ctx.translate(dino.x,dino.y);
+
+    ctx.fillStyle="#333";
+
+    if(dino.duck){
+      // Ducking: lower head, longer body
+      ctx.fillRect(0,25,40,20); // body
+      ctx.fillRect(35,15,22,18); // head
+      // Eye
+      ctx.fillStyle="#fff"; ctx.fillRect(45,20,6,6);
+      ctx.fillStyle="#000"; ctx.fillRect(47,22,2,2);
+      // Mouth (horizontal red bar)
+      ctx.fillStyle="red"; ctx.fillRect(41,24,12,4);
+      // Tail
+      ctx.fillStyle="#333"; ctx.fillRect(-12,28,12,8);
+      // Legs crouched
+      ctx.fillRect(10,40,8,10);
+      ctx.fillRect(24,40,8,10);
+    } else {
+      // Standing Dino
+      ctx.fillRect(0,15,30,28); // body
+      ctx.fillRect(28,0,22,20); // head
+      // Eye
+      ctx.fillStyle="#fff"; ctx.fillRect(40,4,6,6);
+      ctx.fillStyle="#000"; ctx.fillRect(42,6,2,2);
+      // Mouth (horizontal red bar)
+      ctx.fillStyle="red"; ctx.fillRect(34,12,12,4);
+      // Tail
+      ctx.fillStyle="#333"; ctx.fillRect(-12,20,12,8);
+      // Arms
+      ctx.fillRect(10,25,6,8);
+      ctx.fillRect(20,25,6,8);
+      // Legs (animated stride)
+      const phase=Math.sin(t/120);
+      ctx.fillRect(6,40,8,12+(phase>0?4:0));
+      ctx.fillRect(20,40,8,12+(phase<0?4:0));
+    }
+
+    ctx.restore();
+  }
+
+  // Draw cactus
+  function drawCactus(o){
+    ctx.fillStyle="#2f6c3a";
+    ctx.fillRect(o.x,o.y,o.w,o.h); // trunk
+    ctx.fillRect(o.x-6,o.y+10,6,15); // left arm
+    ctx.fillRect(o.x+o.w,o.y+20,6,15); // right arm
+  }
+
+  // Draw bird
+  function drawBird(o,t){
+    ctx.fillStyle="#444";
+    ctx.fillRect(o.x,o.y,o.w,10); // body
+    const wing=Math.sin(t/100)*8;
+    ctx.fillRect(o.x+10,o.y-wing,10,10); // wing up
+    ctx.fillRect(o.x+24,o.y+wing,10,10); // wing down
+    ctx.fillStyle="#c78a53";
+    ctx.fillRect(o.x+o.w-6,o.y+4,6,4); // beak
+  }
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#ddd';ctx.fillRect(0,GROUND,W,20);
+    drawDino(t);
+    obstacles.forEach(o=>{
+      if(o.type==='cactus') drawCactus(o);
+      else drawBird(o,t);
+    });
+  }
+
+  function update(){
+    dino.vy+=1;dino.y+=dino.vy;
+    if(dino.y>GROUND-(dino.duck?40:60)){
+      dino.y=GROUND-(dino.duck?40:60);
+      dino.vy=0;
+    }
+    obstacles.forEach(o=>o.x-=6);
+    if(obstacles.length&&obstacles[0].x<0)obstacles.shift();
+    if(Math.random()<0.02)spawn();
+    obstacles.forEach(o=>{
+      if(dino.x<o.x+o.w&&dino.x+dino.w>o.x&&dino.y<o.y+o.h&&dino.y+dino.h>o.y){stop();}
+    });
+    score++;scoreEl.textContent=score;best=Math.max(best,score);bestEl.textContent=best;
+  }
+
+  function loop(t){if(!running)return;update();draw(t);raf=requestAnimationFrame(loop);}
+  function start(){reset();running=true;overlay.classList.add('hidden');loop();}
+  function stop(){running=false;cancelAnimationFrame(raf);overlay.classList.remove('hidden');
+    overlay.querySelector('h1').textContent='Game Over';
+    overlay.querySelector('p').textContent=`Score: ${score} • Best: ${best}`;}
+  window.addEventListener('keydown',e=>{
+    if(e.code==='Space'||e.code==='ArrowUp'){if(dino.y>=GROUND-(dino.duck?40:60))dino.vy=-12;}
+    if(e.code==='ArrowDown'){dino.duck=true;}
+  });
+  window.addEventListener('keyup',e=>{
+    if(e.code==='ArrowDown'){dino.duck=false;}
+  });
+  startBtn.addEventListener('click',start);
+})();
+</script>
+</body>
+</html>
+
