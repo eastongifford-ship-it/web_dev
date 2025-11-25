@@ -1,44 +1,79 @@
-<!--EG 7TH first webpage-->
+<!-- Eg 7th first website-->
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Bananas</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="stle.css" rel="stylesheet">
-    </head>
-    <body>
-        <div id="header">
-            <h1>Bananas: yumm</h1>
-            <text-align: center;> bananana</text-align:>
-            <p>Bananas are the key to the universe. They are the yummiest, most yellow, and most delicious food in the world and they are packed with potassium they are a good snack for breakfast lunch and evne dinner.</p>
+<head>
+    <title>Bananas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="header">
+        <h1>Bananas: yumm</h1>
+        <p>bananana</p>
+        <p>Bananas are the key to the universe. They are the yummiest, most yellow, most delicious food in the world...</p>
+    </div>
+
+    <div id="why-bananas">
+        <h2>Why Bananas Are Amazing</h2>
+        <ul>
+            <li>Rich in nutrients like potassium and vitamins.</li>
+            <li>Perfect as a quick snack.</li>
+            <li>Great for smoothies and desserts.</li>
+        </ul>
+    </div>
+    
+    <div id="taste-buds">
+        <h2>Bananas: The Key to Your Taste Buds</h2>
+        <p>Bananas have a one-of-a-kind flavor that tastes like the best in the world.</p>
+    </div>
+
+    <div id="images">
+        <h2>Related Images</h2>
+
+        <img id="hover-img"
+             src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg"
+             width="200"
+             alt="Hover to change image">
+
+        <img src="https://th.bing.com/th/id/R.57ff6680667e40cfe103bbc6140c7208?rik=ds0aEcVPtCrUCA&pid=ImgRaw&r=0"
+             width="200"
+             alt="Dancing banana">
+    </div>
+
+    <div id="learn-more">
+        <h2>Learn More About Bananas</h2>
+        <p>Want to know more about bananas? Visit
+            <a href="https://en.wikipedia.org/wiki/Banana" target="_blank">this Wikipedia page</a>.
+        </p>
+    </div>
+
+    <hr>
+
+    <div class="center">
+        <button id="toggle-btn">Show Extra Banana Facts</button>
+
+        <div id="extra-content">
+            <p>Did you know? Bananas float in water because they are less dense!</p>
+            <img src="https://www.saltstrong.com/wp-content/uploads/shutterstock_230043565-1-768x367.jpg"
+                 width="200" alt="Extra banana">
         </div>
-        
-        <div id="why-bananas">
-            <h2>Why Bananas Are Amazing</h2>
-            <ul>
-                <li>Rich in nutrients like potassium and vitamins.</li>
-                <li>Perfect as a quick snack.</li>
-                <li>Great for smoothies and desserts.</li>
-            </ul>
-        </div>
-        
-        <div id="taste-buds">
-            <h2>Bananas: The Key to Your Taste Buds</h2>
-            <p>Bananas have a one-of-a-kind flavor that tastes like the best in the world. If you disagree, that's okay! Hopefully, this website will change your mind.</p>
-        </div>
-        
-        <div id="images">
-            <h2>Related Images</h2>
-            <img src="https://th.bing.com/th/id/R.57ff6680667e40cfe103bbc6140c7208?rik=ds0aEcVPtCrUCA&pid=ImgRaw&r=0" 
-                 alt="Dancing banana animation" width="200">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg" 
-                 alt="A single banana" width="200">
-        </div>
-        
-        <div id="learn-more">
-            <h2>Learn More About Bananas</h2>
-            <p>Want to know more about bananas? Visit <a href="https://en.wikipedia.org/wiki/Banana" target="_blank">this Wikipedia page</a> for more information.</p>
-        </div>
-    </body>
+    </div>
+
+    <script>
+        const btn = document.getElementById("toggle-btn");
+        const extra = document.getElementById("extra-content");
+
+        btn.onclick = function() {
+            if (extra.style.display === "none") {
+                extra.style.display = "block";
+                btn.textContent = "Hide Extra Banana Facts";
+            } else {
+                extra.style.display = "none";
+                btn.textContent = "Show Extra Banana Facts";
+            }
+        };
+    </script>
+</body>
 </html>
