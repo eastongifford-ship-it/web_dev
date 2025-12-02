@@ -1,82 +1,68 @@
 body {
-    background-color: #1a1a2e; 
-    color: #eaeaea; 
-    font-family: 'Trebuchet MS', sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-  
-  header {
-    text-align: center;
-    padding: 20px;
-    background-color: #16213e;
-  }
-  
-  header h1 {
-    margin: 0;
-    font-size: 2.5em;
-    color: #ffcc00;
-  }
-  
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  p {
-    max-width: 800px;
-    text-align: center;
-    margin: 20px;
-    line-height: 1.6;
-  }
-  
-  ul {
-    list-style-type: square;
-    max-width: 600px;
-    margin: 20px;
-    padding: 10px;
-  }
-  
-  ul li {
-    margin: 10px 0;
-  }
-  
-  .images {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin: 20px;
-  }
-  
-  .images img {
-    width: 100%;
-    border-radius: 8px;
-    transition: transform 0.3s ease;
-  }
-  
-  .images img:hover {
-    transform: scale(1.1); 
-  }
-  
-  .extra-content {
-    display: none;
-    margin: 20px;
-    text-align: center;
-  }
-  
-  button {
-    background-color: #ffcc00;
-    border: none;
-    padding: 10px 20px;
-    margin: 20px;
-    cursor: pointer;
-    font-size: 1em;
-    border-radius: 5px;
-  }
-  
-  button:hover {
-    background-color: #ffaa00;
-  }
-  
+  background-color: #f0f8ff; /* light blue background */
+  color: #333333; /* dark text color */
+  font-family: 'Trebuchet MS', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  text-align: center;
+  background-color: #ff6347; /* tomato red */
+  color: white;
+  padding: 20px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 20px;
+  padding: 10px;
+  background-color: #ffe4b5; /* moccasin */
+  border-radius: 8px;
+}
+
+.images {
+  display: flex;
+  gap: 15px;
+  margin: 20px;
+}
+
+.images img {
+  width: 250px;
+  height: auto;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.images img:hover {
+  transform: scale(1.1); /* hover effect */
+  cursor: pointer;
+}
+
+#extraContent {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #4682b4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #5a9bd4;
+}
