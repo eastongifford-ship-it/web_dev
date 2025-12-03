@@ -1,12 +1,7 @@
-<DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home template</title>
-</head>
-<body>
-    <h1>first flask project</h1>
+{%extends "base.html"%}
+{%block content%}home-flask{%endblock%}
+{%block body%}
+    <h1>🍌Welcome you Banana🍌</h1>
     <form method="POST">
         <label for="name">Enter your name:</label>
         <input type ="text" id="name" name="name" placeholder="Banana">
@@ -14,5 +9,4 @@
         <input type="submit" value="Submit">
     </form>
     <img src = "https://images.immediate.co.uk/production/volatile/sites/30/2017/01/Bananas-218094b-scaled.jpg?quality=90&resize=500%2C580" alt="banana image"> 
-</body>
-</html>
+{% endblock%}
