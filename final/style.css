@@ -1,6 +1,6 @@
 body {
-  background-color: #f0f8ff; /* light blue background */
-  color: #333333; /* dark text color */
+  background-color: #f0f8ff; 
+  color: #333333; 
   font-family: 'Trebuchet MS', sans-serif;
   margin: 0;
   padding: 0;
@@ -8,7 +8,7 @@ body {
 
 header {
   text-align: center;
-  background-color: #ff6347; /* tomato red */
+  background-color: #ff6347; 
   color: white;
   padding: 20px;
 }
@@ -26,7 +26,7 @@ header {
   gap: 15px;
   margin: 20px;
   padding: 10px;
-  background-color: #ffe4b5; /* moccasin */
+  background-color: #ffe4b5; 
   border-radius: 8px;
 }
 
@@ -44,7 +44,7 @@ header {
 }
 
 .images img:hover {
-  transform: scale(1.1); /* hover effect */
+  transform: scale(1.1); 
   cursor: pointer;
 }
 
