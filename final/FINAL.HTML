@@ -32,7 +32,8 @@
       <img src="https://3.bp.blogspot.com/-f9GuWz7jc84/WweqETEkGBI/AAAAAAAAROk/rW6fIE3VMkEK8DiInI8mNkyptiVUMY8VACEwYBhgL/s1600/Arches%2BNational%2BPark%2BBalanced%2BRock.jpg" alt="Balanced Rock">
     </div>
 
-    <button onclick="toggleContent()">View More</button>
+    <!-- 🌊 Water flowing toggle button -->
+    <button class="water-btn" onclick="toggleContent()">View More</button>
 
     <div id="extraContent">
       <p>
@@ -44,39 +45,12 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>hello</title>
-  <style>
-    .hover-area img {
-      display: none;
-    }
-
-    
-    .hover-area:hover img {
-      display: block;
-    }
-
-    .hover-area img {
-      opacity: 0;
-      transition: opacity 0.1s ease;
-    }
-
-    .hover-area:hover img {
-      opacity: 1;
-    }
-  </style>
-</head>
-<body>
-  <div class="hover-area">
+  
+  <div class="hover-area" style="margin-top:40px;">
     This is random text, hover to see image.
-
     <img src="https://img.sunset02.com/sites/default/files/styles/4_3_horizontal_inbody_900x506/public/image/2016/04/main/courthouse-towers-getty-xl.jpg?itok=KBDPSf_E" alt="Appearing Image" width="200">
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

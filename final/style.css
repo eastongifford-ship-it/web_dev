@@ -26,7 +26,7 @@ header {
   gap: 15px;
   margin: 20px;
   padding: 10px;
-  background-color: #ffe4b5; 
+  background-color: #ff836d;
   border-radius: 8px;
 }
 
@@ -42,11 +42,18 @@ header {
   border-radius: 8px;
   transition: transform 0.3s ease;
 }
-
-.images img:hover {
-  transform: scale(1.1); 
-  cursor: pointer;
+.hover-area img {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
+
+.hover-area:hover img {
+  opacity: 1;
+  visibility: visible;
+}
+
+
 
 #extraContent {
   display: none;
@@ -54,15 +61,55 @@ header {
   text-align: center;
 }
 
-button {
-  padding: 10px 20px;
-  background-color: #4682b4;
-  color: white;
+.water-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
+  color: white;
   cursor: pointer;
+  background: linear-gradient(270deg, #00c6ff, #0072ff, #00c6ff);
+  background-size: 200% 200%;
+  animation: waterFlow 4s linear infinite;
+  transition: transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-button:hover {
-  background-color: #5a9bd4;
+.water-btn:hover {
+  transform: scale(1.1);
+}
+
+@keyframes waterFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.water-btn::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255,255,255,0.6);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.water-btn.ripple::after {
+  animation: rippleEffect 0.6s linear;
+}
+
+@keyframes rippleEffect {
+  from {
+    transform: scale(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(20);
+    opacity: 0;
+  }
 }
